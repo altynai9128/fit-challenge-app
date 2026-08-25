@@ -1121,6 +1121,23 @@
         .user-groups-list .group-link .g-status.active {
             color: #00c853;
         }
+        .security-badge {
+            position: fixed;
+            bottom: 10px;
+            right: 10px;
+            background: rgba(0,200,83,0.9);
+            color: #fff;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+            z-index: 999;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            backdrop-filter: blur(4px);
+            pointer-events: none;
+        }
     </style>
 </head>
 <body>
@@ -1229,6 +1246,81 @@
         <div class="counter" id="viewerCounter"></div>
     </div>
     <script>
+        function verifyTelegramData() {
+            try {
+                const tg = window.Telegram.WebApp;
+                if (!tg || !tg.initDataUnsafe) {
+                    showToast('⚠️ Приложение должно быть открыто через Telegram');
+                    return false;
+                }
+                const user = tg.initDataUnsafe.user;
+                if (!user || !user.id) {
+                    showToast('⚠️ Ошибка авторизации. Перезапустите приложение через бота.');
+                    return false;
+                }
+                const allowedDomains = [
+                    'github.io',
+                    'pages.dev',
+                    'netlify.app',
+                    'localhost'
+                ];
+                const currentDomain = window.location.hostname;
+                if (!allowedDomains.some(d => currentDomain.includes(d))) {
+                    showToast('⚠️ Подозрительный источник. Закройте страницу.');
+                    return false;
+                }
+                const authDate = tg.initDataUnsafe.auth_date;
+                if (authDate) {
+                    const now = Math.floor(Date.now() / 1000);
+                    const diff = now - authDate;
+                    if (diff > 86400) {
+                        showToast('⚠️ Сессия устарела. Перезапустите приложение через бота.');
+                        return false;
+                    }
+                }
+                return true;
+            } catch (e) {
+                console.error('Security check failed:', e);
+                showToast('⚠️ Ошибка безопасности. Перезапустите приложение.');
+                return false;
+            }
+        }
+
+        function checkSecurity() {
+            if (!verifyTelegramData()) {
+                showToast('⚠️ Сессия недействительна. Перезапустите приложение.');
+                return false;
+            }
+            return true;
+        }
+
+        function showSecurityBadge() {
+            const badge = document.createElement('div');
+            badge.className = 'security-badge';
+            badge.innerHTML = '🔒 Защищено Telegram';
+            document.body.appendChild(badge);
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            if (!verifyTelegramData()) {
+                document.getElementById('app').innerHTML = `
+                    <div style="text-align:center;padding:40px 20px;color:#888;">
+                        <div style="font-size:48px;margin-bottom:16px;">🔒</div>
+                        <h2 style="color:#ff6b6b;">Доступ ограничен</h2>
+                        <p style="margin-top:8px;">Приложение должно быть открыто через Telegram.<br>
+                        Пожалуйста, перейдите по ссылке из бота.</p>
+                        <button onclick="window.location.reload()" style="margin-top:20px;padding:12px 24px;background:#f7971e;border:none;border-radius:12px;color:#000;font-weight:700;cursor:pointer;">
+                            🔄 Перезагрузить
+                        </button>
+                    </div>
+                `;
+                return;
+            }
+            if (!isGuest) {
+                showSecurityBadge();
+            }
+        });
+
         const API_URL = 'https://script.google.com/macros/s/AKfycby4hXDgcC2QXiRXVh6lMwdj6H8a_T92Bg73hkdhkKaWvdHwpBR8D-g5hETJyfTUFe6NVg/exec';
 
         async function apiCall(action, data) {
@@ -1368,6 +1460,10 @@
         function loginWithTelegram() {
             const botUsername = 'yahudeu_challenge_bot';
             const url = `https://t.me/${botUsername}?start=webapp`;
+            if (!url.startsWith('https://t.me/')) {
+                showToast('⚠️ Подозрительная ссылка');
+                return;
+            }
             window.open(url, '_blank');
             showToast('📱 Откройте приложение через Telegram');
         }
@@ -1974,6 +2070,7 @@
         }
 
         function updateProfile() {
+            if (!checkSecurity()) return;
             const weight = parseFloat(document.getElementById('weightInput').value);
             const height = parseFloat(document.getElementById('heightInput').value);
             const goal = parseFloat(document.getElementById('goalInput').value);
@@ -2342,6 +2439,7 @@
                 loginWithTelegram();
                 return;
             }
+            if (!checkSecurity()) return;
 
             const btn = document.querySelector('.modal-content .btn-primary');
             if (btn) {
@@ -2451,6 +2549,7 @@
         }
 
         function processPayment(groupId) {
+            if (!checkSecurity()) return;
             const group = groups.find(g => g.id === groupId);
             if (!group) return;
             if (group.refunded) {
