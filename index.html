@@ -1716,7 +1716,6 @@
             const result = await apiCall('getGroups');
             if (result.status === 'ok' && result.groups) {
                 groups = result.groups;
-                // Загружаем members для каждой группы
                 for (const g of groups) {
                     const membersResult = await apiCall('getGroupMembers', { groupId: g.id });
                     if (membersResult.status === 'ok' && membersResult.members) {
