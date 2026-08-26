@@ -1278,10 +1278,17 @@
         <div class="counter" id="viewerCounter"></div>
     </div>
     <script>
-        const API_URL = 'https://script.google.com/macros/s/AKfycbzTM1pk0U3QJ-Kt-_ZyKAXwvCAuK3cu35vMhhUHM--WCxwb81kSrLmxbcsXnrUHm33Itw/exec';
+        const API_URL = 'https://script.google.com/macros/s/AKfycbwJHXHYbhUG8uOCNoN0jh1o4BCMAL2IsYeh1jPGs34_pmPQMszTq3krlTu1lf2LGJzkcg/exec';
 
         let currentPage = 1;
         const GROUPS_PER_PAGE = 10;
+        let groups = [];
+        let groupIdCounter = 1;
+        let currentGroupId = null;
+        let viewingUserId = null;
+        const REFUND_HOURS = 24;
+        let viewerImages = [];
+        let viewerIndex = 0;
 
         function verifyTelegramData() {
             try {
@@ -1388,14 +1395,6 @@
             winnings: 0,
             withdrawStatus: 'none'
         };
-
-        let groups = [];
-        let groupIdCounter = 1;
-        let currentGroupId = null;
-        let viewingUserId = null;
-        const REFUND_HOURS = 24;
-        let viewerImages = [];
-        let viewerIndex = 0;
 
         const recipes = {
             breakfast: [
@@ -1558,6 +1557,13 @@
                     currentUser.groups = [];
                 }
                 currentUser.genderLocked = true;
+            }
+            for (const g of groups) {
+                if (g.members && g.members.some(m => m.id === currentUser.id)) {
+                    if (!currentUser.groups.includes(g.id)) {
+                        currentUser.groups.push(g.id);
+                    }
+                }
             }
         }
 
@@ -2687,16 +2693,16 @@
                 entryFee: fee,
                 prizePool: prizePool,
                 maxMembers: 10,
-                members: [{ id: currentUser.id, name: currentUser.name, photoUrl: currentUser.photoUrl, paid: true,
-                    startWeight: null,
-                    currentWeight: null, weightHistory: [], photoBefore: null, photoAfter: null
-                }],
                 createdAt: Date.now(),
                 status: 'waiting',
                 refunded: false,
                 completed: false,
                 active: false,
-                startDate: null
+                startDate: null,
+                members: [{ id: currentUser.id, name: currentUser.name, photoUrl: currentUser.photoUrl, paid: true,
+                    startWeight: null,
+                    currentWeight: null, weightHistory: [], photoBefore: null, photoAfter: null
+                }]
             };
 
             groups.push(newGroup);
@@ -2883,7 +2889,7 @@
                     </div>
                     <div class="stat-row">
                         <span class="stat-label">💰 Призовой фонд</span>
-                        <span class="stat-value">$${group.entryFee * 10}</span>
+                        <span class="stat-value">$${group.prizePool}</span>
                     </div>
                     <div class="stat-row">
                         <span class="stat-label">👥 Участники</span>
