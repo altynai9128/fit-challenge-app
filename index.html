@@ -261,11 +261,7 @@
             background-size: cover;
             background-position: center;
             overflow: hidden;
-        }
-        .group-card .members .avatar img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
+            flex-shrink: 0;
         }
         .group-card .members .avatar-empty {
             width: 28px;
@@ -278,6 +274,7 @@
             font-size: 14px;
             color: #444;
             background: transparent;
+            flex-shrink: 0;
         }
         .group-card .time-left {
             font-size: 12px;
@@ -579,6 +576,7 @@
             background-position: center;
             overflow: hidden;
             color: transparent;
+            flex-shrink: 0;
         }
         .group-member-item .member-info {
             flex: 1;
@@ -665,7 +663,7 @@
             font-size: 30px;
             color: #fff;
             cursor: pointer;
-            background: rgba(0,0,0,0.5);
+            background: rgba(0, 0, 0, 0.5);
             width: 50px;
             height: 50px;
             border-radius: 50%;
@@ -678,7 +676,7 @@
             transition: 0.3s;
         }
         .photo-viewer .close-viewer:hover {
-            background: rgba(255,255,255,0.2);
+            background: rgba(255, 255, 255, 0.2);
         }
         .photo-viewer .nav-btn {
             position: absolute;
@@ -687,7 +685,7 @@
             font-size: 40px;
             color: #fff;
             cursor: pointer;
-            background: rgba(0,0,0,0.5);
+            background: rgba(0, 0, 0, 0.5);
             width: 50px;
             height: 50px;
             border-radius: 50%;
@@ -699,7 +697,7 @@
             transition: 0.3s;
         }
         .photo-viewer .nav-btn:hover {
-            background: rgba(255,255,255,0.2);
+            background: rgba(255, 255, 255, 0.2);
         }
         .photo-viewer .nav-btn.prev {
             left: 20px;
@@ -1035,7 +1033,9 @@
             animation: spin 0.8s linear infinite;
         }
         @keyframes spin {
-            to { transform: rotate(360deg); }
+            to {
+                transform: rotate(360deg);
+            }
         }
         .countdown {
             background: #0a0a0f;
@@ -1125,7 +1125,7 @@
             position: fixed;
             bottom: 10px;
             right: 10px;
-            background: rgba(0,200,83,0.9);
+            background: rgba(0, 200, 83, 0.9);
             color: #fff;
             padding: 6px 12px;
             border-radius: 20px;
@@ -1137,6 +1137,37 @@
             gap: 6px;
             backdrop-filter: blur(4px);
             pointer-events: none;
+        }
+        .pagination {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin: 16px 0;
+        }
+        .pagination button {
+            padding: 8px 16px;
+            border: 1px solid #1a1a2e;
+            border-radius: 8px;
+            background: transparent;
+            color: #888;
+            font-size: 14px;
+            cursor: pointer;
+            transition: 0.3s;
+            min-width: 40px;
+        }
+        .pagination button:hover {
+            border-color: #f7971e;
+            color: #fff;
+        }
+        .pagination button.active {
+            background: #f7971e;
+            color: #000;
+            border-color: #f7971e;
+        }
+        .pagination button:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
         }
     </style>
 </head>
@@ -1199,6 +1230,7 @@
                 🔐 <strong>Гостевой режим</strong> — войдите в Telegram, чтобы создавать группы и участвовать в челленджах
             </div>
             <div id="groupsList"><div class="loading"><div class="spinner"></div><p>Загрузка групп...</p></div></div>
+            <div id="paginationContainer"></div>
         </div>
         <div class="page" id="page-profile">
             <div id="profileContent"><div class="loading"><div class="spinner"></div><p>Загрузка профиля...</p></div></div>
@@ -1246,6 +1278,11 @@
         <div class="counter" id="viewerCounter"></div>
     </div>
     <script>
+        const API_URL = 'https://script.google.com/macros/s/AKfycbzTM1pk0U3QJ-Kt-_ZyKAXwvCAuK3cu35vMhhUHM--WCxwb81kSrLmxbcsXnrUHm33Itw/exec';
+
+        let currentPage = 1;
+        const GROUPS_PER_PAGE = 10;
+
         function verifyTelegramData() {
             try {
                 const tg = window.Telegram.WebApp;
@@ -1258,12 +1295,7 @@
                     showToast('⚠️ Ошибка авторизации. Перезапустите приложение через бота.');
                     return false;
                 }
-                const allowedDomains = [
-                    'github.io',
-                    'pages.dev',
-                    'netlify.app',
-                    'localhost'
-                ];
+                const allowedDomains = ['github.io', 'pages.dev', 'netlify.app', 'localhost'];
                 const currentDomain = window.location.hostname;
                 if (!allowedDomains.some(d => currentDomain.includes(d))) {
                     showToast('⚠️ Подозрительный источник. Закройте страницу.');
@@ -1300,8 +1332,6 @@
             badge.innerHTML = '🔒 Защищено Telegram';
             document.body.appendChild(badge);
         }
-
-        const API_URL = 'https://script.google.com/macros/s/AKfycbzTM1pk0U3QJ-Kt-_ZyKAXwvCAuK3cu35vMhhUHM--WCxwb81kSrLmxbcsXnrUHm33Itw/exec';
 
         async function apiCall(action, data) {
             try {
@@ -1450,7 +1480,8 @@
 
         document.addEventListener('DOMContentLoaded', function() {
             if (!verifyTelegramData()) {
-                document.getElementById('app').innerHTML = `
+                document.getElementById('app').innerHTML =
+                    `
                     <div style="text-align:center;padding:40px 20px;color:#888;">
                         <div style="font-size:48px;margin-bottom:16px;">🔒</div>
                         <h2 style="color:#ff6b6b;">Доступ ограничен</h2>
@@ -1466,7 +1497,6 @@
             if (!isGuest) {
                 showSecurityBadge();
             }
-            // Инициализация
             groups = [];
             groupIdCounter = 1;
             currentUser.groups = [];
@@ -1522,7 +1552,11 @@
                 if (u.hips) currentUser.hips = u.hips;
                 if (u.photoBefore) currentUser.photoBefore = u.photoBefore;
                 if (u.photoAfter) currentUser.photoAfter = u.photoAfter;
-                if (u.groups) currentUser.groups = JSON.parse(u.groups) || [];
+                if (u.groups) {
+                    currentUser.groups = JSON.parse(u.groups) || [];
+                } else {
+                    currentUser.groups = [];
+                }
                 currentUser.genderLocked = true;
             }
         }
@@ -1554,6 +1588,60 @@
                 groups: JSON.stringify(currentUser.groups)
             };
             apiCall('saveUser', { user: userData });
+        }
+
+        function getPaginatedGroups() {
+            const start = (currentPage - 1) * GROUPS_PER_PAGE;
+            const end = start + GROUPS_PER_PAGE;
+            return groups.slice(start, end);
+        }
+
+        function getTotalPages() {
+            return Math.ceil(groups.length / GROUPS_PER_PAGE);
+        }
+
+        function renderPagination() {
+            const container = document.getElementById('paginationContainer');
+            const totalPages = getTotalPages();
+            if (totalPages <= 1) {
+                container.innerHTML = '';
+                return;
+            }
+            let html = '<div class="pagination">';
+            if (currentPage > 1) {
+                html += `<button onclick="goToPage(${currentPage - 1})">‹</button>`;
+            }
+            const maxVisible = 10;
+            let startPage = Math.max(1, currentPage - Math.floor(maxVisible / 2));
+            let endPage = Math.min(totalPages, startPage + maxVisible - 1);
+            if (endPage - startPage < maxVisible - 1) {
+                startPage = Math.max(1, endPage - maxVisible + 1);
+            }
+            if (startPage > 1) {
+                html += `<button onclick="goToPage(1)">1</button>`;
+                if (startPage > 2) {
+                    html += `<button disabled>…</button>`;
+                }
+            }
+            for (let i = startPage; i <= endPage; i++) {
+                html += `<button onclick="goToPage(${i})" class="${i === currentPage ? 'active' : ''}">${i}</button>`;
+            }
+            if (endPage < totalPages) {
+                if (endPage < totalPages - 1) {
+                    html += `<button disabled>…</button>`;
+                }
+                html += `<button onclick="goToPage(${totalPages})">${totalPages}</button>`;
+            }
+            if (currentPage < totalPages) {
+                html += `<button onclick="goToPage(${currentPage + 1})">›</button>`;
+            }
+            html += '</div>';
+            container.innerHTML = html;
+        }
+
+        function goToPage(page) {
+            currentPage = page;
+            renderGroups();
         }
 
         function openCreateGroup() {
@@ -1640,8 +1728,8 @@
             if (groupId) {
                 const gid = parseInt(groupId);
                 const group = groups.find(g => g.id === gid);
-                if (group && !currentUser.groups.includes(gid) && group.members.length < group.maxMembers && !group
-                    .refunded) {
+                if (group && !currentUser.groups.includes(gid) && group.members && group.members.length < group
+                    .maxMembers && !group.refunded) {
                     setTimeout(() => {
                         if (isAuthorized()) {
                             showToast('📩 Вас пригласили в группу!');
@@ -1672,11 +1760,17 @@
         function getStatusBadge(group) {
             if (group.completed) {
                 return '<span class="status-badge finished">✅ Завершён</span>';
-            } else if (group.active) {
-                return '<span class="status-badge active">▶️ Активен</span>';
-            } else {
-                return '<span class="status-badge waiting">⏳ Идёт набор</span>';
             }
+            if (group.active) {
+                return '<span class="status-badge active">▶️ В процессе</span>';
+            }
+            if (group.members && group.members.length >= group.maxMembers) {
+                group.active = true;
+                group.startDate = group.startDate || Date.now();
+                group.status = 'active';
+                return '<span class="status-badge active">▶️ В процессе</span>';
+            }
+            return '<span class="status-badge waiting">⏳ Идёт набор</span>';
         }
 
         function getCountdown(group) {
@@ -1685,7 +1779,6 @@
             const endDate = group.startDate + (30 * 24 * 60 * 60 * 1000);
             const remaining = Math.max(0, endDate - now);
             const days = Math.floor(remaining / (24 * 60 * 60 * 1000));
-            const hours = Math.floor((remaining % (24 * 60 * 60 * 1000)) / (60 * 60 * 1000));
             const startDateStr = new Date(group.startDate).toLocaleDateString('ru-RU', {
                 day: 'numeric',
                 month: 'long',
@@ -1726,32 +1819,48 @@
                 }
             }
 
-            container.innerHTML = '';
             if (groups.length === 0) {
-                container.innerHTML = '<p style="color:#888;text-align:center;padding:20px 0;">Пока нет групп. Создайте первую!</p>';
+                container.innerHTML =
+                '<p style="color:#888;text-align:center;padding:20px 0;">Пока нет групп. Создайте первую!</p>';
+                renderPagination();
                 return;
             }
-            groups.forEach(g => {
+
+            groups.sort((a, b) => b.id - a.id);
+
+            const paginated = getPaginatedGroups();
+            container.innerHTML = '';
+
+            paginated.forEach(g => {
                 const card = document.createElement('div');
                 card.className = 'group-card';
                 if (!isAuthorized()) {
                     card.classList.add('guest-disabled');
                 } else {
-                    card.onclick = () => { currentGroupId = g.id;
-                        switchTab('group'); };
+                    card.onclick = () => {
+                        currentGroupId = g.id;
+                        switchTab('group');
+                    };
                 }
+
+                const isActuallyMember = g.members && g.members.some(m => m.id === currentUser.id);
                 const isJoined = currentUser.groups.includes(g.id);
-                let membersHtml = g.members ? g.members.map(m => {
-                    const avatarUrl = m.photoUrl ? m.photoUrl : '';
-                    if (m.id === currentUser.id) {
-                        return `<div class="avatar" style="border-color:#00c853;background-image:url('${avatarUrl}');">${m.name[0]}</div>`;
+                const isMember = isJoined || isActuallyMember;
+
+                let membersHtml = '';
+                if (g.members) {
+                    const displayMembers = g.members.slice(0, 10);
+                    membersHtml = displayMembers.map(m => {
+                        const avatarUrl = m.photoUrl ? m.photoUrl : '';
+                        const isCurrent = m.id === currentUser.id;
+                        return `<div class="avatar" style="${isCurrent ? 'border-color:#00c853;' : ''}background-image:url('${avatarUrl}');">${m.name[0]}</div>`;
+                    }).join('');
+                    const emptySlots = 10 - displayMembers.length;
+                    for (let i = 0; i < emptySlots; i++) {
+                        membersHtml += `<div class="avatar-empty">+</div>`;
                     }
-                    return `<div class="avatar" style="background-image:url('${avatarUrl}');">${m.name[0]}</div>`;
-                }).join('') : '';
-                const emptySlots = g.maxMembers - (g.members ? g.members.length : 0);
-                for (let i = 0; i < emptySlots; i++) {
-                    membersHtml += `<div class="avatar-empty">+</div>`;
                 }
+
                 let timeLeftHtml = '';
                 if ((g.members ? g.members.length : 0) < g.maxMembers && g.createdAt && !g.refunded) {
                     const elapsed = (Date.now() - g.createdAt) / (1000 * 60 * 60);
@@ -1765,7 +1874,8 @@
                             </div>
                         `;
                     } else {
-                        timeLeftHtml = `<div class="time-left" style="color:#ff4444;border-color:#ff4444;">⚠️ Группа не набралась за 24 часа — деньги возвращены</div>`;
+                        timeLeftHtml =
+                            `<div class="time-left" style="color:#ff4444;border-color:#ff4444;">⚠️ Группа не набралась за 24 часа — деньги возвращены</div>`;
                         if (!g.refunded) {
                             g.refunded = true;
                             showToast('💸 Группа не набралась за 24 часа. Деньги возвращены.');
@@ -1777,8 +1887,9 @@
 
                 let btnHtml;
                 if (!isAuthorized()) {
-                    btnHtml = `<button class="join-btn guest-btn" onclick="event.stopPropagation(); loginWithTelegram()">🔑 Войти в Telegram</button>`;
-                } else if (isJoined) {
+                    btnHtml =
+                        `<button class="join-btn guest-btn" onclick="event.stopPropagation(); loginWithTelegram()">🔑 Войти в Telegram</button>`;
+                } else if (isMember) {
                     btnHtml = `<button class="join-btn joined" disabled>✅ Вы в группе</button>`;
                 } else if (g.refunded) {
                     btnHtml = `<button class="join-btn" disabled>⏳ Группа закрыта</button>`;
@@ -1786,7 +1897,7 @@
                     btnHtml = `<button class="join-btn" disabled>🔒 Мест нет</button>`;
                 } else {
                     btnHtml =
-                    `<button class="join-btn" onclick="event.stopPropagation(); openPayment(${g.id})">Вступить</button>`;
+                        `<button class="join-btn" onclick="event.stopPropagation(); openPayment(${g.id})">Вступить</button>`;
                 }
 
                 const countdownHtml = g.active ? getCountdown(g) : '';
@@ -1818,6 +1929,8 @@
                 `;
                 container.appendChild(card);
             });
+
+            renderPagination();
             checkInvite();
         }
 
@@ -2196,12 +2309,14 @@
                 currentUser.weight = weight;
                 currentUser.weightHistory.push(weight);
                 const now = new Date();
-                const dateStr = now.getDate() + ' ' + ['янв','фев','мар','апр','май','июн','июл','авг','сен','окт','ноя','дек'][now.getMonth()];
+                const dateStr = now.getDate() + ' ' + ['янв', 'фев', 'мар', 'апр', 'май', 'июн', 'июл', 'авг', 'сен', 'окт',
+                    'ноя', 'дек'
+                ][now.getMonth()];
                 currentUser.weightDates.push(dateStr);
-                
+
                 if (!currentUser.weightHistoryPhotos) currentUser.weightHistoryPhotos = [];
                 if (!currentUser.weightHistoryDates) currentUser.weightHistoryDates = [];
-                
+
                 if (currentUser.weightHistory.length > 30) {
                     currentUser.weightHistory.shift();
                     currentUser.weightDates.shift();
@@ -2217,7 +2332,7 @@
             reader.onload = function(e) {
                 const photoData = e.target.result;
                 currentUser.lastWeightPhoto = photoData;
-                
+
                 if (weight) {
                     const now = new Date();
                     const dateStrFull = now.toLocaleDateString('ru-RU', {
@@ -2228,7 +2343,7 @@
                     currentUser.weightHistoryPhotos.push(photoData);
                     currentUser.weightHistoryDates.push(dateStrFull);
                 }
-                
+
                 saveUserData();
                 showToast('📸 Фото весов загружено!');
                 renderProfile();
@@ -2249,7 +2364,9 @@
             if (!currentUser.stepsDates) currentUser.stepsDates = [];
             currentUser.stepsHistory.push(steps);
             const now = new Date();
-            const dateStr = now.getDate() + ' ' + ['янв','фев','мар','апр','май','июн','июл','авг','сен','окт','ноя','дек'][now.getMonth()];
+            const dateStr = now.getDate() + ' ' + ['янв', 'фев', 'мар', 'апр', 'май', 'июн', 'июл', 'авг', 'сен', 'окт',
+                'ноя', 'дек'
+            ][now.getMonth()];
             currentUser.stepsDates.push(dateStr);
             if (currentUser.stepsHistory.length > 30) {
                 currentUser.stepsHistory.shift();
@@ -2373,7 +2490,12 @@
             ctx.font = '8px sans-serif';
             ctx.textAlign = 'left';
             ctx.fillText('0', 2, height - 4);
-            ctx.fillText(`${Math.round(maxVal/1000)}k`, 2, 12);
+            ctx.fillText(`${Math.round(maxVal / 1000)}k`, 2, 12);
+        }
+
+        function getDayKey() {
+            const now = new Date();
+            return now.getFullYear() + '-' + (now.getMonth() + 1) + '-' + now.getDate();
         }
 
         function generateDailyMenu() {
@@ -2522,7 +2644,7 @@
             leaderboardData.forEach((item, index) => {
                 const div = document.createElement('div');
                 div.className = 'leaderboard-item';
-                const medal = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `${index+1}.`;
+                const medal = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `${index + 1}.`;
                 div.innerHTML = `
                     <span class="position">${medal}</span>
                     <span class="name">${item.name} (${item.weightLoss}%)</span>
@@ -2565,8 +2687,10 @@
                 entryFee: fee,
                 prizePool: prizePool,
                 maxMembers: 10,
-                members: [{ id: currentUser.id, name: currentUser.name, photoUrl: currentUser.photoUrl, paid: true, startWeight: null,
-                    currentWeight: null, weightHistory: [], photoBefore: null, photoAfter: null }],
+                members: [{ id: currentUser.id, name: currentUser.name, photoUrl: currentUser.photoUrl, paid: true,
+                    startWeight: null,
+                    currentWeight: null, weightHistory: [], photoBefore: null, photoAfter: null
+                }],
                 createdAt: Date.now(),
                 status: 'waiting',
                 refunded: false,
@@ -2666,8 +2790,11 @@
                 }
                 existingMember.paid = true;
             } else {
-                group.members.push({ id: currentUser.id, name: currentUser.name, photoUrl: currentUser.photoUrl, paid: true, startWeight: null,
-                    currentWeight: null, weightHistory: [], photoBefore: null, photoAfter: null });
+                group.members.push({ id: currentUser.id, name: currentUser.name, photoUrl: currentUser.photoUrl,
+                    paid: true,
+                    startWeight: null,
+                    currentWeight: null, weightHistory: [], photoBefore: null, photoAfter: null
+                });
             }
 
             if (!currentUser.groups.includes(groupId)) {
@@ -2681,7 +2808,8 @@
                 showToast('🎉 Группа набрала 10 участников! Челлендж стартовал!');
                 const botToken = '8369064981:AAFuIk-v1Jy9qnZX0ybpKSpbBcmjHzQ1xFY';
                 const chatId = '497139774';
-                const message = `🚀 ГРУППА СТАРТОВАЛА!\n\nНазвание: ${group.name}\nУчастников: ${group.members.length}/10\nДата старта: ${new Date(group.startDate).toLocaleDateString('ru-RU')}\nЧерез 30 дней будут подведены итоги!`;
+                const message =
+                    `🚀 ГРУППА СТАРТОВАЛА!\n\nНазвание: ${group.name}\nУчастников: ${group.members.length}/10\nДата старта: ${new Date(group.startDate).toLocaleDateString('ru-RU')}\nЧерез 30 дней будут подведены итоги!`;
                 fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -2698,7 +2826,7 @@
             renderGroupDetail(groupId);
         }
 
-        function renderGroupDetail(groupId) {
+        async function renderGroupDetail(groupId) {
             const container = document.getElementById('groupDetailContent');
             if (!isAuthorized()) {
                 container.innerHTML = `
@@ -2715,6 +2843,11 @@
             if (!group) {
                 container.innerHTML = '<p style="color:#888;">Группа не найдена</p>';
                 return;
+            }
+
+            const membersResult = await apiCall('getGroupMembers', { groupId: groupId });
+            if (membersResult.status === 'ok' && membersResult.members) {
+                group.members = membersResult.members;
             }
 
             let membersHtml = group.members.map(m => {
